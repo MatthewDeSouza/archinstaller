@@ -52,44 +52,48 @@ set_partition_sizes() {
     [ -z "$HOME_SIZE" ] || HOME_SIZE="+${HOME_SIZE}"
 }
 
-partiton() {
+partition() {
     (
-    	# printf "g\n"				# Creates a new empty GPT partiton table
-        ## bootloader
+    	printf "g\n"				# Creates a new empty GPT partiton table
         printf "n\n"				# Create a new partition
-        printf "p\n"				# Type - primary
+        #printf "p\n"				# Type - primary
         printf "1\n"				# Partition number
-        printf "\n"					# Default sector: from set_partiton_sizes
-        printf "+${EFI_SIZE}\n"		# Last sector
+        printf "\n"				# Default sector: from set_partiton_sizes
+        printf "+${EFI_SIZE}\n"			# Last sector
         printf "t\n"				# Change type
-        printf "ef\n"				# EFI
+        printf "1\n"				# EFI
 
         ## root
         printf "n\n"				# Create a new partiton
-        printf "p\n"				# Type - primary
+        #printf "p\n"				# Type - primary
         printf "2\n"				# Partiton number
         printf "\n"					# Default sector
-        printf "+${ROOT_SIZE}\n"	# Last sector: from set_partiton_sizes
+        printf "+${ROOT_SIZE}\n"		# Last sector: from set_partiton_sizes
         printf "t\n"				# Change type
-        printf "83\n"				# Linux
+	printf "2\n"				# Partition number
+        printf "24\n"				# Linux root (x86_64)
 
         ## swap
         printf "n\n"				# Create a new partition
-        printf "p\n"				# Type - primary
+        #printf "p\n"				# Type - primary
         printf "3\n"				# Partition number
-        printf "\n"					# Default sector
-        printf "+${SWAP_SIZE}\n"	# Last sector: from set_partiton_sizes
+        printf "\n"				# Default sector
+        printf "+${SWAP_SIZE}\n"		# Last sector: from set_partiton_sizes
         printf "t\n"				# Change type
-        printf "82\n"				# Linux swap / Solaris
+	printf "3\n"				# Partition number
+        printf "19\n"				# Linux swap
 
         ## home
         printf "n\n"				# Create a new partiton
-        printf "p\n"				# Type - primary
+        #printf "p\n"				# Type - primary
         printf "4\n"				# Partition number
-        printf "\n"					# Default sector
-        printf "${HOME_SIZE}\n"	# Last sector: from set_partiton_sizes
+        printf "\n"				# Default sector
+        printf "${HOME_SIZE}\n"			# Last sector: from set_partiton_sizes
         printf "t\n"				# Change type
-        printf "83\n"				# Linux
+	printf "4\n"				# Partition number
+        printf "28\n"				# Linux home
+
+	printf "w\n"				# Write changes
 
     ) | fdisk $DEVICE
 }
