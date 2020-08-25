@@ -56,7 +56,7 @@ install_yay
 ## Choose graphics driver
 PS3='Which processor do you use? '
 options=("INTEL" "AMD")
-select $PROCESSOR in "${options[@]}"
+select PROCESSOR in "${options[@]}"
 do
     case $PROCESSOR in
         "INTEL") PROCESSOR=0    ;;
@@ -66,7 +66,7 @@ done
 
 PS3='Which graphics driver would you like to use? '
 options=("NVIDIA -- Proprietary" "NVIDIA -- Legacy" "NVIDIA -- Open Source" "AMD -- AMDGPU" "AMD -- ATI" "Intel")
-select $GFXDRV in "${options[@]}"
+select GFXDRV in "${options[@]}"
 do
     case $GFXDRV in
         "NVIDIA -- Proprietary")    GFXDRV=0    ;;
