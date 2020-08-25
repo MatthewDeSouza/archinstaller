@@ -5,7 +5,7 @@ source ./functions.sh
 
 echo 'Arch install script'
 echo 'Make sure to clear the device desired for the arch install.'
-echo 'By Matthew DeSouza -- mdesouza01@manhattan.edu'
+echo 'By Matthew DeSouza -- mdesouza01 at manhattan d[o]t edu'
 
 update_mirrors
 device_prep
@@ -16,7 +16,7 @@ format_partitions $DEVICE
 mount_partitions $DEVICE
 
 ## Find which Kernel version is desired
-PS3='Which Linux kernel version would you like to install?\n'
+PS3='Which Linux kernel version would you like to install?'
 options=("linux" "linux-hardened" "linux-lts" "linux-zen")
 select KERNELVER in "${options[@]}"
 do
@@ -25,7 +25,6 @@ do
         "linux-hardened") KERNELVER=1    ;;
         "linux-lts") KERNELVER=2 ;;
         "linux-zen") KERNELVER=3 ;;
-        *) echo "Invalid input, assuming option 0" && KERNELVER=0   ;;
     esac
 done
 
@@ -55,14 +54,13 @@ install_bootloader $DEVICE
 install_yay
 
 ## Choose graphics driver
-PS3='Which processor do you use? Enter 3 to skip '
+PS3='Which processor do you use? '
 options=("INTEL" "AMD")
 select $PROCESSOR in "${options[@]}"
 do
     case $PROCESSOR in
         "INTEL") PROCESSOR=0    ;;
         "AMD") PROCESSOR=1  ;;
-        *) PROCESSOR=2  ;;
     esac
 done
 

@@ -119,18 +119,22 @@ mount_partitions() {
     local dev=$1
 
     # Mounting root partition
-    mount ${dev}2 /mnt
+    mount ${dev}2 /mnt && echo "Root partition mounted successfully!"
+    printf "\n\n"
 
     # Mounting EFI partition
     mkdir /mnt/boot
-    mount ${dev}1 /mnt/boot
+    mount ${dev}1 /mnt/boot && echo "Boot partition mounted successfully!"
+    printf "\n\n"
 
     # Mounting swap partition
-    swapon ${dev}3
+    swapon ${dev}3 && echo "Swap mounted successfully!"
+    printf "\n\n"
 
     # Mounting home partition
     mkdir /mnt/home
-    mount ${dev}4 /mnt/home
+    mount ${dev}4 /mnt/home && echo "Home partition mounted successfully!"
+    printf "\n\n"
 }
 
 install_essential() {
