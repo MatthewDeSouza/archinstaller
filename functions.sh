@@ -105,14 +105,14 @@ format_partitions() {
     mkfs.fat -F 32 ${dev}1
 
     # Formatting second partition
-    mkfs.btrfs -L root ${dev}2
+    mkfs.btrfs -L root --force ${dev}2
 
     # Formatting third partition
     mkswap ${dev}3
     swaplabel ${dev}3 swap
 
     # Formatting fourth partition
-    mkfs.btrfs -L home ${dev}4
+    mkfs.btrfs -L home --force ${dev}4
 }
 
 mount_partitions() {
