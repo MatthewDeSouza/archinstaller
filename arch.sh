@@ -28,7 +28,7 @@ do
     esac
 done
 
-install_essentials $KERNELVER
+install_essential $KERNELVER
 generate_fstab
 change_root
 set_time_zone $TIME_ZONE
