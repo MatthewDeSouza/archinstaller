@@ -21,10 +21,10 @@ options=("linux" "linux-hardened" "linux-lts" "linux-zen")
 select KERNELVER in "${options[@]}"
 do
     case $KERNELVER in
-        "linux") KERNELVER=0 ;;
-        "linux-hardened") KERNELVER=1    ;;
-        "linux-lts") KERNELVER=2 ;;
-        "linux-zen") KERNELVER=3 ;;
+        "linux") KERNELVER=0 && break   ;;
+        "linux-hardened") KERNELVER=1 && break    ;;
+        "linux-lts") KERNELVER=2 && break   ;;
+        "linux-zen") KERNELVER=3 && break   ;;
     esac
 done
 
@@ -43,9 +43,9 @@ options=("yes" "no")
 select USE_SAME_PASSWD in "${options[@]}"
 do
     case $USE_SAME_PASSWD in
-        "no") read -p "Enter the user password: " ROOT_PASSWD ;;
+        "no") read -p "Enter the user password: " ROOT_PASSWD && break ;;
         "yes") break    ;;
-        *) echo "Invalid input, assuming no" && read -p "Enter the user password: " ROOT_PASSWD    ;;
+        *) echo "Invalid input, assuming no" && read -p "Enter the user password: " ROOT_PASSWD && break    ;;
     esac
 done
 
@@ -69,12 +69,12 @@ options=("NVIDIA -- Proprietary" "NVIDIA -- Legacy" "NVIDIA -- Open Source" "AMD
 select GFXDRV in "${options[@]}"
 do
     case $GFXDRV in
-        "NVIDIA -- Proprietary")    GFXDRV=0    ;;
-        "NVIDIA -- Legacy")         GFXDRV=1    ;;
-        "NVIDIA -- Open Source")    GFXDRV=2    ;;
-        "AMD -- AMDGPU")            GFXDRV=3    ;;
-        "AMD -- ATI")               GFXDRV=4    ;;
-        "Intel")                    GFXDRV=5    ;;
+        "NVIDIA -- Proprietary")    GFXDRV=0 && break    ;;
+        "NVIDIA -- Legacy")         GFXDRV=1 && break    ;;
+        "NVIDIA -- Open Source")    GFXDRV=2 && break   ;;
+        "AMD -- AMDGPU")            GFXDRV=3 && break   ;;
+        "AMD -- ATI")               GFXDRV=4 && break   ;;
+        "Intel")                    GFXDRV=5 && break   ;;
     esac
 done
 
