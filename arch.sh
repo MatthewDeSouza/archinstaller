@@ -1,83 +1,199 @@
 #!/bin/bash
 # MIT LICENSE
 # Have fun using arch!
-source ./functions.sh
+# Default FS: btrfs
+# Default locale: en_US.UTF-8 UTF-8
+# Default partitioning scheme: GPT
 
-echo 'Arch install script'
-echo 'Make sure to clear the device desired for the arch install.'
-echo 'By Matthew DeSouza -- mdesouza01 at manhattan d[o]t edu'
+setup_pre() {
+    printf "\n\nArch install script\n\n"
+    printf "Make sure to clear the device desired for the arch install.\n\n"
+    printf "PARTITION SIGNATURES WILL BE REMOVED FROM INPUTTED DEVICE\n"
+    update_mirrors
+    device_prep
+    set_partition_sizes
+    confirm
+    partition
+    format_partitions
+    mount_partitions
+    select_kernel
+    install_essential
+    generate_fstab
+    copy_post_install
+    change_root
+}
 
-update_mirrors
-device_prep
-set_partition_sizes
-confirm_format
-partition
-format_partitions $DEVICE
-mount_partitions $DEVICE
+confirm() {
+	read -r -n 1 -p "Is this correct? [y/N]" START
+	case $START in
+		[yY]) printf "\nContinuing script\n" && break ;;
+		*)    printf "\nQuitting script\n"   && exit  ;;
+	esac
+}
 
-## Find which Kernel version is desired
-PS3='Which Linux kernel version would you like to install?'
-options=("linux" "linux-hardened" "linux-lts" "linux-zen")
-select KERNELVER in "${options[@]}"
-do
-    case $KERNELVER in
-        "linux") KERNELVER=0 && break   ;;
-        "linux-hardened") KERNELVER=1 && break    ;;
-        "linux-lts") KERNELVER=2 && break   ;;
-        "linux-zen") KERNELVER=3 && break   ;;
-    esac
-done
+device_prep() {
+    # Check if time is correct
+    timedatectl set-ntp true
 
-install_essential $KERNELVER
-generate_fstab
-change_root
-set_time_zone $TIME_ZONE
-set_locale
-set_keymap $KEYMAP
-set_hostname $HOSTNAME
-read -p "Enter the root password: " ROOT_PASSWD
-set_root_password $ROOT_PASSWD
+    # Set variables
+    read -p "Enter device: "                                       DEVICE
+    printf "\n"
 
-PS3='Would you like to use the same password for root and wheel account? '
-options=("yes" "no")
-select USE_SAME_PASSWD in "${options[@]}"
-do
-    case $USE_SAME_PASSWD in
-        "no") read -p "Enter the user password: " ROOT_PASSWD && break ;;
-        "yes") break    ;;
-        *) echo "Invalid input, assuming no" && read -p "Enter the user password: " ROOT_PASSWD && break    ;;
-    esac
-done
+    read -p "Enter hostname: "                                     HOSTNAME
+    printf "\n"
 
-set_user_password $USER_NAME $ROOT_PASSWD
-install_bootloader $DEVICE
-install_yay
+    read -p "Enter keymap: "                                       KEYMAP
+    printf "\n"
 
-## Choose graphics driver
-PS3='Which processor do you use? '
-options=("INTEL" "AMD")
-select PROCESSOR in "${options[@]}"
-do
-    case $PROCESSOR in
-        "INTEL") PROCESSOR=0    ;;
-        "AMD") PROCESSOR=1  ;;
-    esac
-done
+    read -p "Enter user account name: "                            USER_NAME
+    printf "\n"
 
-PS3='Which graphics driver would you like to use? '
-options=("NVIDIA -- Proprietary" "NVIDIA -- Legacy" "NVIDIA -- Open Source" "AMD -- AMDGPU" "AMD -- ATI" "Intel")
-select GFXDRV in "${options[@]}"
-do
-    case $GFXDRV in
-        "NVIDIA -- Proprietary")    GFXDRV=0 && break    ;;
-        "NVIDIA -- Legacy")         GFXDRV=1 && break    ;;
-        "NVIDIA -- Open Source")    GFXDRV=2 && break   ;;
-        "AMD -- AMDGPU")            GFXDRV=3 && break   ;;
-        "AMD -- ATI")               GFXDRV=4 && break   ;;
-        "Intel")                    GFXDRV=5 && break   ;;
-    esac
-done
+    read -p "Enter your timezone in this format -- COUNTRY/AREA: " TIMEZONE
+    printf "\n"
 
-install_packages $PROCESSOR $GFXDRV
+    printf "Device: $DEVICE\n\nHostname: $HOSTNAME\n\nKeymap: $KEYMAP\n\nUsername: $USER_NAME\n\nTimezone: $TIMEZONE\n\n"
 
-setup_dotfiles
+    printf "Begin creating partitons for $DEVICE\n\n"
+}
+
+update_mirrors() {
+    printf "\n"
+    pacman -Syu --noconfirm
+    printf "\n"
+}
+
+set_partition_sizes() {
+	read -p "Enter size of EFI partition: "                             EFI_SIZE
+
+	read -p "Enter size of root partition: "                            ROOT_SIZE
+
+	read -p "Enter size of linux swap: "                                SWAP_SIZE
+
+	read -p "Enter size of home partition (leave blank to fill rest): " HOME_SIZE
+
+    printf "EFI size:  $EFI_SIZE\nRoot size: $ROOT_SIZE\nSwap size: $SWAP_SIZE\nHome size: $HOME_SIZE\n"
+
+    [ -z "$HOME_SIZE" ] || HOME_SIZE="+${HOME_SIZE}" # Adds plus to $HOME_SIZE if not empty
+}
+
+partition() {
+    wipefs --all --force $DEVICE
+    (
+    	printf "g\n"				# Creates a new empty GPT partiton table\
+
+        printf "n\n"				# Create a new partition
+        printf "1\n"				# Partition number
+        printf "\n"				    # Default sector: from set_partiton_sizes
+        printf "+${EFI_SIZE}\n"		# Last sector
+        printf "t\n"				# Change type
+        printf "1\n"				# EFI
+
+        ## root
+        printf "n\n"				# Create a new partiton
+        printf "2\n"				# Partiton number
+        printf "\n"					# Default sector
+        printf "+${ROOT_SIZE}\n"	# Last sector: from set_partiton_sizes
+        printf "t\n"				# Change type
+	    printf "2\n"				# Partition number
+        printf "24\n"				# Linux root (x86_64)
+
+        ## swap
+        printf "n\n"				# Create a new partition
+        printf "3\n"				# Partition number
+        printf "\n"				    # Default sector
+        printf "+${SWAP_SIZE}\n"	# Last sector: from set_partiton_sizes
+        printf "t\n"				# Change type
+	    printf "3\n"				# Partition number
+        printf "19\n"				# Linux swap
+
+        ## home
+        printf "n\n"				# Create a new partiton
+        printf "4\n"				# Partition number
+        printf "\n"				    # Default sector
+        printf "${HOME_SIZE}\n"		# Last sector: from set_partiton_sizes
+        printf "t\n"				# Change type
+	    printf "4\n"				# Partition number
+        printf "28\n"				# Linux home
+
+	    printf "w\n"				# Write changes
+
+    ) | fdisk $DEVICE
+}
+
+format_partitions() {
+    # Formatting first partition
+    mkfs.fat -F 32 ${DEVICE}1
+    sleep 2
+
+    # Formatting second partition
+    mkfs.btrfs -L root ${DEVICE}2
+    sleep 2
+
+    # Formatting third partition
+    mkswap ${DEVICE}3
+    swaplabel ${DEVICE}3 swap
+    sleep 2
+
+    # Formatting fourth partition
+    mkfs.btrfs -L home ${DEVICE}4
+    sleep 2
+}
+
+mount_partitions() {
+    # Mounting root partition
+    mount ${DEVICE}2 /mnt       && echo "Root partition mounted successfully!"
+    printf "\n\n"
+    sleep 1.5
+
+    # Mounting EFI partition
+    mkdir /mnt/boot
+    mount ${DEVICE}1 /mnt/boot  && echo "Boot partition mounted successfully!"
+    printf "\n\n"
+    sleep 1.5
+
+    # Mounting swap partition
+    swapon ${DEVICE}3           && echo "Swap mounted successfully!"
+    printf "\n\n"
+    sleep 1.5
+
+    # Mounting home partition
+    mkdir /mnt/home
+    mount ${DEVICE}4 /mnt/home  && echo "Home partition mounted successfully!"
+    printf "\n\n"
+    sleep 1.5
+}
+
+select_kernel() {
+    PS3='Linux kernel version: '
+    options=("linux" "linux-hardened" "linux-lts" "linux-zen")
+    select KERNELVER in "${options[@]}"
+    do
+        case $KERNELVER in
+            "linux")          KERNELVER=${options[0]}   &&  break   ;;
+            "linux-hardened") KERNELVER=${options[1]}   &&  break   ;;
+            "linux-lts")      KERNELVER=${options[2]}   &&  break   ;;
+            "linux-zen")      KERNELVER=${options[3]}   &&  break   ;;
+        esac
+    done
+}
+
+install_essential() {
+    pacstrap /mnt base base-devel ${KERNELVER} linux-firmware
+}
+
+generate_fstab() {
+    # fstab is defined though UUID in this script
+    genfstab -U /mnt >> /mnt/etc/fstab
+}
+
+copy_post_install() {
+    cp postinstall.sh /mnt/root/postinstall.sh
+    printf "#!/bin/bash\nTIME_ZONE='{$TIME_ZONE}'\nKEYMAP='${KEYMAP}'\nHOSTNAME='${KEYMAP}'\nDEVICE='${DEVICE}'\n" | cat - /mnt/root/postinstall.sh > /mnt/root/temp && mv /mnt/root/temp /mnt/root/postinstall.sh
+}
+
+change_root() {
+    chmod 755 /mnt/root/postinstall.sh
+    arch-chroot /mnt /root/postinstall.sh
+}
+
+setup_pre
