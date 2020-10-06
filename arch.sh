@@ -36,7 +36,7 @@ device_prep() {
     timedatectl set-ntp true
 
     # Set variables
-    read -p "Enter device: "                                       DEVICE
+    read -p "Enter device (WILL BE COMPLETELY FORMATTED: "         DEVICE
     printf "\n"
 
     read -p "Enter hostname: "                                     HOSTNAME
@@ -58,7 +58,7 @@ device_prep() {
 
 update_mirrors() {
     printf "\n"
-    pacman -Syu --noconfirm
+    pacman -Sy --noconfirm
     printf "\n"
 }
 
